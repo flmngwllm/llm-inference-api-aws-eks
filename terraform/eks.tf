@@ -1,5 +1,5 @@
 resource "aws_eks_cluster" "llm_inference_api_cluster" {
-  name = "llm-inference-api-secure-cluster"
+  name = "llm-inference-api-cluster"
 
   access_config {
     authentication_mode = "API"
@@ -51,7 +51,7 @@ resource "aws_eks_node_group" "llm_inference_api_node_group" {
 
   remote_access {
     ec2_ssh_key               = var.ssh_key_name
-    source_security_group_ids = [aws_security_group.secure_devops_eks_nodes_sg.id]
+    source_security_group_ids = [aws_security_group.llm_inference_api_eks_nodes_sg.id]
   }
 
   # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
@@ -65,3 +65,7 @@ resource "aws_eks_node_group" "llm_inference_api_node_group" {
   ]
 
 }
+
+
+
+
