@@ -68,3 +68,39 @@ resource "aws_iam_role_policy_attachment" "llm_inference_api_nodes_ssm" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
   role       = aws_iam_role.llm_inference_api_node_group_role.name
 }
+
+data "aws_iam_policy_document" "llm_alb_controller_trust" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    principals {
+      type        = "Federated"
+      identifiers = [aws_iam_openid_connect_provider.llm_inference_api_eks_oidc.arn]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "${replace(aws_iam_openid_connect_provider.llm_inference_api_eks_oidc.url, "https://", "")}:sub"
+      values   = ["system:serviceaccount:kube-system:aws-alb-controller"]
+    }
+  }
+}
+
+resource "aws_iam_role" "llm_inference_api_alb_controller_role" {
+  name               = "llm_inference_api_alb_controller_role"
+  assume_role_policy = data.aws_iam_policy_document.llm_alb_controller_trust.json
+  tags = {
+    Name        = "llm_inference_api_alb_controller_role"
+    Environment = "prod"
+    ManagedBy   = "Terraform"
+  }
+}
+
+resource "aws_iam_policy" "llm_inference_api_alb_controller_policy" {
+  name   = "llm_inference_api_alb_controller_policy"
+  policy = file("${path.module}/policy/llm_aws_alb_policy.json")
+
+}
+
+resource "aws_iam_role_policy_attachment" "llm_inference_api_alb_attachment" {
+  policy_arn = aws_iam_policy.llm_inference_api_alb_controller_policy.arn
+  role       = aws_iam_role.llm_inference_api_alb_controller_role.name
+}
