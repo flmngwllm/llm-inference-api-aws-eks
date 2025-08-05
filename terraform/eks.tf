@@ -67,5 +67,52 @@ resource "aws_eks_node_group" "llm_inference_api_node_group" {
 }
 
 
+resource "aws_eks_access_entry" "llm_inference_gha_access" {
+  cluster_name  = aws_eks_cluster.llm_inference_api_cluster.name
+  principal_arn = var.github_actions_role_arn
+  type          = "STANDARD"
+
+}
+
+resource "aws_eks_access_policy_association" "llm_inference_gha_admin" {
+  cluster_name  = aws_eks_cluster.llm_inference_api_cluster.name
+  principal_arn = var.github_actions_role_arn
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  access_scope {
+    type = "cluster"
+  }
+
+  depends_on = [
+    aws_eks_access_entry.llm_inference_gha_access,
+    aws_eks_cluster.llm_inference_api_cluster,             
+    aws_eks_node_group.llm_inference_api_cluster_node_group 
+  ]
+}
+
+
+resource "aws_eks_access_entry" "llm_inference_user_access" {
+  cluster_name  = aws_eks_cluster.llm_inference_api_cluster.name
+  principal_arn = "arn:aws:iam::831274730062:user/llm_inference_api"
+  type          = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "llm_inference_user_admin" {
+  cluster_name  = aws_eks_cluster.llm_inference_api_cluster.name
+  principal_arn = "arn:aws:iam::831274730062:user/llm_inference_api"
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+
+  depends_on = [aws_eks_access_entry.llm_inference_user_access]
+}
+
+resource "time_sleep" "delay_for_access_entry" {
+  depends_on      = [aws_eks_access_policy_association.gha_admin]
+  create_duration = "120s"
+}
+
+
 
 
