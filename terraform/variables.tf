@@ -21,3 +21,13 @@ variable "private_subnets" {
     "us-east-1b" = 4
   }
 }
+
+variable "ssh_key_name" {
+  description = "Name of the SSH key pair to use for EKS node access"
+  type        = string
+}
+
+variable "public_access_cidrs" {
+  type        = list(string)
+  description = "List of CIDR blocks allowed to access the EKS public endpoint"
+}
