@@ -61,7 +61,7 @@ resource "aws_eks_node_group" "llm_inference_api_node_group" {
     aws_iam_role_policy_attachment.llm_inference_api_AmazonEKSWorkerNodePolicy,
     aws_iam_role_policy_attachment.llm_inference_api_AmazonEKS_CNI_Policy,
     aws_iam_role_policy_attachment.llm_inference_api_AmazonEC2ContainerRegistryReadOnly,
-    aws_iam_role_policy_attachment.llm_inference_api_ssm
+    aws_iam_role_policy_attachment.llm_inference_api_nodes_ssm
   ]
 
 }
