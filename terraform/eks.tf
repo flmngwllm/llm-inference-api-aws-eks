@@ -12,9 +12,9 @@ resource "aws_eks_cluster" "llm_inference_api_cluster" {
   vpc_config {
     subnet_ids = [
       aws_subnet.public_llm_inference_api_subnet["us-east-1a"].id,
-      aws_subnet.aws_subnet.public_llm_inference_api_subnet["us-east-1a"].id,
-      aws_subnet.private_public_llm_inference_api_subnet["us-east-1a"].id,
-      aws_subnet.private_public_llm_inference_api_subnet["us-east-1b"].id,
+      aws_subnet.public_llm_inference_api_subnet["us-east-1a"].id,
+      aws_subnet.private_llm_inference_api_subnet["us-east-1a"].id,
+      aws_subnet.private_llm_inference_api_subnet["us-east-1b"].id
     ]
     endpoint_private_access = true
     endpoint_public_access  = true
