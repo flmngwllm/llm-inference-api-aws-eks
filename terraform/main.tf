@@ -1,16 +1,16 @@
 terraform {
-    required_providers {
-        aws = {
-            source = "hashicorp/aws"
-            version = "~> 5.30"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.30"
 
-        }
-        kubernetes = {
-            source = "hashicorp/kubernetes"
-            version = " ~> 2.25.2"
-        }
     }
-    backend "s3" {
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = " ~> 2.25.2"
+    }
+  }
+  backend "s3" {
     bucket         = "llm-inference-api-terraform-state"
     key            = "llm-inference-api/terraform.tfstate"
     region         = "us-east-1"
@@ -20,7 +20,7 @@ terraform {
 }
 
 provider "aws" {
-    region = var.REGION
+  region = var.REGION
 }
 
 data "aws_eks_cluster" "llm_inference_api_cluster" {
