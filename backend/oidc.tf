@@ -1,13 +1,5 @@
-resource "aws_iam_openid_connect_provider" "llm_github" {
+data "aws_iam_openid_connect_provider" "llm_github" {
   url = "https://token.actions.githubusercontent.com"
-
-  client_id_list = [
-    "sts.amazonaws.com"
-  ]
-
-  thumbprint_list = [
-    "6938fd4d98bab03faadb97b34396831e3780aea1"
-  ]
 }
 
 
@@ -20,7 +12,7 @@ resource "aws_iam_role" "llm_inference_api_github_actions" {
       {
         Effect = "Allow",
         Principal = {
-          Federated = "arn:aws:iam::${var.account_id}:oidc-provider/token.actions.githubusercontent.com"
+          Federated = "${data.aws_iam_openid_connect_provider.llm_github.arn}"
         },
         Action = "sts:AssumeRoleWithWebIdentity",
         Condition = {
@@ -35,7 +27,7 @@ resource "aws_iam_role" "llm_inference_api_github_actions" {
       {
         Effect = "Allow",
         Principal = {
-          AWS = "arn:aws:iam::${var.account_id}:user/llm-inference"
+          AWS = "arn:aws:iam::${var.account_id}:user/llm_inference"
         },
         Action = "sts:AssumeRole"
       }
