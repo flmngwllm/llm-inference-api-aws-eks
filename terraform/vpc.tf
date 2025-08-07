@@ -14,8 +14,8 @@ resource "aws_subnet" "public_llm_inference_api_subnet" {
   vpc_id     = aws_vpc.llm_inference_api_vpc.id
   cidr_block = cidrsubnet(aws_vpc.llm_inference_api_vpc.cidr_block, 8, each.value)
   tags = {
-    Name                                   = "public-${each.key}"
-    "kubernetes.io/role/elb"               = "1"
+    Name                                              = "public-${each.key}"
+    "kubernetes.io/role/elb"                          = "1"
     "kubernetes.io/cluster/llm_inference_api_cluster" = "owned"
   }
 
@@ -27,8 +27,8 @@ resource "aws_subnet" "private_llm_inference_api_subnet" {
   vpc_id     = aws_vpc.llm_inference_api_vpc.id
   cidr_block = cidrsubnet(aws_vpc.llm_inference_api_vpc.cidr_block, 8, each.value)
   tags = {
-    Name                                   = "private-${each.key}"
-    "kubernetes.io/role/internal-elb"      = "1"
+    Name                                              = "private-${each.key}"
+    "kubernetes.io/role/internal-elb"                 = "1"
     "kubernetes.io/cluster/llm_inference_api_cluster" = "owned"
   }
 
