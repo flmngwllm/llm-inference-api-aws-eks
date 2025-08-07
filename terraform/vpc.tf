@@ -1,7 +1,7 @@
 resource "aws_vpc" "llm_inference_api_vpc" {
   cidr_block           = "10.20.0.0/16"
   enable_dns_support   = true
-  instance_tenancy     = default
+  instance_tenancy     = "default"
   enable_dns_hostnames = true
   tags = {
     Name = "llm-inference-api-vpc"
