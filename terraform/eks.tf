@@ -85,7 +85,7 @@ resource "aws_eks_access_policy_association" "llm_inference_gha_admin" {
   depends_on = [
     aws_eks_access_entry.llm_inference_gha_access,
     aws_eks_cluster.llm_inference_api_cluster,
-    aws_eks_node_group.llm_inference_api_cluster_node_group
+    aws_eks_node_group.llm_inference_api_node_group
   ]
 }
 
