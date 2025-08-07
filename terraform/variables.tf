@@ -22,10 +22,10 @@ variable "private_subnets" {
   }
 }
 
-variable "ssh_key_name" {
-  description = "Name of the SSH key pair to use for EKS node access"
-  type        = string
-}
+# variable "ssh_key_name" {
+#   description = "Name of the SSH key pair to use for EKS node access"
+#   type        = string
+# }
 
 variable "public_access_cidrs" {
   type        = list(string)
