@@ -1,0 +1,158 @@
+name: Deploy App with Helm + EKS
+on:
+  workflow_run:
+    workflows: ["Terraform CI/CD"]
+    types:
+      - completed
+  workflow_dispatch:
+
+env: 
+  CI_BUCKET_NAME: ${{ secrets.CI_BUCKET_NAME }}
+  ACTIONS_ROLE_ARN: ${{ secrets.ACTIONS_ROLE_ARN }}
+ 
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-app:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ACTIONS_ROLE_ARN }}
+          role-session-name: GitHubActions
+          aws-region: us-east-1
+
+      - name: tfsec action
+        uses: aquasecurity/tfsec-action@v1.0.3
+        continue-on-error: true
+       
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      
+      - name: Build Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: llm-inference-api
+          ECR_IMAGE_TAG: ${{ github.sha }}-${{ github.run_number }}
+        run: |
+          echo "Building Docker image"
+          docker build -t "$ECR_REGISTRY/$ECR_REPOSITORY:$ECR_IMAGE_TAG" ./llm-api
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$ECR_IMAGE_TAG"
+          echo "Docker image: $ECR_IMAGE_TAG pushed to ECR"
+          echo "$ECR_REGISTRY/$ECR_REPOSITORY:$ECR_IMAGE_TAG"
+
+      - name: Scan Docker image
+        uses: aquasecurity/trivy-action@master
+        with:
+            image-ref: ${{ steps.login-ecr.outputs.registry }}/llm-inference-api:${{ github.sha }}-${{ github.run_number }}
+      
+      - name: Update kubeconfig
+        run: |
+          aws eks --region us-east-1 update-kubeconfig --name llm-inference-api-cluster
+      - name: Debug EKS Access Entry
+        run: |
+          echo "Checking if GitHub Actions access entry exists..."
+          aws eks describe-access-entry \
+            --cluster-name llm-inference-api-cluster \
+            --principal-arn arn:aws:iam::831274730062:role/github-actions-role \
+            --region us-east-1 || echo "Access entry not found or not ready."
+            
+    
+      - name: Who am I?
+        run: |
+          kubectl config view --minify -o jsonpath='{.users[0].user.exec.args}'
+          aws sts get-caller-identity 
+
+      - name: Install helm
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      
+      - name: Add Helm repository
+        run: |
+          helm repo add eks https://aws.github.io/eks-charts
+          helm repo update
+
+      - name: Download VPC ID artifact
+        run: |
+          aws s3 cp s3://${{ secrets.CI_BUCKET_NAME }}/vpc_id.txt ./artifacts/vpc_id.txt
+
+      - name: Read VPC ID into environment variable
+        id: vpc
+        run: |
+          VPC_ID=$(cat ./artifacts/vpc_id.txt)
+          echo "vpc_id=$VPC_ID" >> $GITHUB_OUTPUT
+
+      - name: Deploy ALB Controller
+        run: |
+          helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller \
+            -n kube-system \
+            --create-namespace \
+            --set clusterName=llm-inference-api-cluster \
+            --set region=us-east-1 \
+            --set vpcId=${{ steps.vpc.outputs.vpc_id }} \
+            --set serviceAccount.create=false \
+            --set serviceAccount.name=aws-alb-controller \
+            --set image.tag="v2.7.1"
+
+      - name: Sleep for ALB readiness
+        run: sleep 60
+
+      - name: Wait for ALB controller webhook to be ready
+        run: |
+          echo "Waiting for ALB controller to be ready..."
+          kubectl rollout status deployment aws-load-balancer-controller -n kube-system
+          echo "Checking webhook endpoints..."
+          kubectl get endpoints -n kube-system aws-load-balancer-webhook-service   
+
+      - name: Verify access to EKS
+        run: |
+          echo "Checking cluster node access..."
+          kubectl get nodes
+
+      # - name: Add prometheus Helm repositoty
+      #   run: |
+      #     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+      #     helm repo update
+      
+      # - name: Deploy Prometheus 
+      #   env:
+      #     GRAFANA_ADMIN_PASS: ${{ secrets.GRAFANA_ADMIN_PASS }}
+      #   run: |
+      #     export GRAFANA_ADMIN_PASS="$GRAFANA_ADMIN_PASS"
+      #     envsubst '${GRAFANA_ADMIN_PASS}' < monitoring/monitoring-values.yaml > monitoring/temp-values.yaml
+
+      #     helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+      #       --namespace monitoring \
+      #       --create-namespace \
+      #       -f monitoring/temp-values.yaml \
+
+      - name: Deploy to EKS 
+        run: | 
+          echo "Deploying via Helm"
+          helm upgrade --install llm-api ./llm-api/llm-api-helm-chart \
+            --namespace default \
+            --create-namespace \
+            --set image.repository=831274730062.dkr.ecr.us-east-1.amazonaws.com/llm-inference-api \
+            --set image.tag=${{ github.sha }}-${{ github.run_number }}
+
+      - name: Verify deployment
+        run: |
+          echo "Verifying deployment"
+          kubectl get pods --namespace default
+          kubectl get svc   
+          kubectl get deployments
+          kubectl get nodes
+      
+      - name: Update kubeconfig
+        run: |
+          aws eks --region us-east-1 update-kubeconfig --name llm-inference-api-cluster

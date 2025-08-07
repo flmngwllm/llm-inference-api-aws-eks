@@ -1,0 +1,115 @@
+name: Terraform CI/CD
+on: 
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+  workflow_dispatch:
+    
+env:
+  TF_WORKING_DIR: ./terraform
+  PUBLIC_ACCESS_CIDRS: '["0.0.0.0/0"]'
+  CI_BUCKET_NAME: ${{ secrets.CI_BUCKET_NAME }}
+  ACTIONS_ROLE_ARN: ${{ secrets.ACTIONS_ROLE_ARN }}
+  
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    outputs:
+      vpc_id: ${{ steps.terraform.outputs.vpc_id }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ env.TF_WORKING_DIR }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Terraform setup
+        uses: hashicorp/setup-terraform@v3
+
+      - name: AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ env.ACTIONS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Terraform Init
+        run: terraform init -upgrade
+
+      - name: Terraform format
+        run: terraform fmt -check
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform plan
+        run: |
+          terraform plan -out=tfplan -input=false -no-color
+          -var='public_access_cidrs=["0.0.0.0/0"]' \
+          -var="github_actions_role_arn=${ACTIONS_ROLE_ARN}"
+        
+
+      - name: Terraform apply
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
+        run: |
+          terraform apply -input=false -auto-approve 
+          -var='public_access_cidrs=["0.0.0.0/0"]' \
+          -var="github_actions_role_arn=${ACTIONS_ROLE_ARN}"
+      
+      - name: Save VPC ID to file
+        run: terraform output -raw vpc_id > vpc_id.txt
+
+      - name: Upload VPC ID to S3
+        run: |
+          aws s3 cp vpc_id.txt s3://${{ secrets.CI_BUCKET_NAME }}/vpc_id.txt
+        
+      - name: Test cluster access
+        run: |
+          echo "Testing if assumed GitHub Actions role can access EKS..."
+          aws eks describe-cluster --name llm-inference-api-cluster --region us-east-1
+      - name: Debug Access Policy Association
+        run: |
+          echo "Current policy associations:"
+          aws eks describe-access-entry \
+            --cluster-name llm-inference-api-cluster \
+            --principal-arn ${{ secrets.ACTIONS_ROLE_ARN }} \
+            --region us-east-1
+
+      - name: Brief wait to ensure access propagation
+        run: sleep 30
+
+      - name: Wait for EKS Cluster readiness
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "Waiting for EKS cluster to be active..."
+          aws eks wait cluster-active --name llm-inference-api-cluster --region us-east-1
+          echo "Waiting for node group to be ready..."
+          aws eks wait nodegroup-active --cluster-name llm-inference-api-cluster --nodegroup-name llm_inference_api_node_group --region us-east-1
+    
+      - name: Kubernetes kubeconfig
+        if: github.event_name != 'pull_request'
+        run: |
+          aws eks --region us-east-1 update-kubeconfig --name llm-inference-api-cluster
+        
+      - name: Github SHA
+        if: github.event_name != 'pull_request'
+        run: echo "${GITHUB_SHA}" > commit_sha.txt
+
+      - name: Upload commit SHA as artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: commit-sha
+          path: terraform/commit_sha.txt
