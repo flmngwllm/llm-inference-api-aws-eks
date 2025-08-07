@@ -1,5 +1,5 @@
 resource "aws_vpc" "llm_inference_api_vpc" {
-  cidr_block           = "10.0.0/16"
+  cidr_block           = "10.20.0.0/16"
   enable_dns_support   = true
   instance_tenancy     = default
   enable_dns_hostnames = true
@@ -16,7 +16,7 @@ resource "aws_subnet" "public_llm_inference_api_subnet" {
   tags = {
     Name                                   = "public-${each.key}"
     "kubernetes.io/role/elb"               = "1"
-    "kubernetes.io/cluster/secure_cluster" = "owned"
+    "kubernetes.io/cluster/llm_inference_api_cluster" = "owned"
   }
 
 }
@@ -29,7 +29,7 @@ resource "aws_subnet" "private_llm_inference_api_subnet" {
   tags = {
     Name                                   = "private-${each.key}"
     "kubernetes.io/role/internal-elb"      = "1"
-    "kubernetes.io/cluster/secure_cluster" = "owned"
+    "kubernetes.io/cluster/llm_inference_api_cluster" = "owned"
   }
 
 }
@@ -62,7 +62,7 @@ resource "aws_route_table" "llm_inference_api_private_route_table" {
   }
 
   tags = {
-    Name = "llm-inference-api-public-route-table"
+    Name = "llm-inference-api-private-route-table"
   }
 }
 

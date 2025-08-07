@@ -109,7 +109,7 @@ resource "aws_eks_access_policy_association" "llm_inference_user_admin" {
 }
 
 resource "time_sleep" "delay_for_access_entry" {
-  depends_on      = [aws_eks_access_policy_association.gha_admin]
+  depends_on      = [aws_eks_access_policy_association.llm_inference_gha_admin]
   create_duration = "120s"
 }
 
