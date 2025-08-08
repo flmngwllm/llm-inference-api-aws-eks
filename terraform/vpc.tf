@@ -45,7 +45,7 @@ resource "aws_internet_gateway" "llm_inference_api_igw" {
 resource "aws_route_table" "llm_inference_api_public_route_table" {
   vpc_id = aws_vpc.llm_inference_api_vpc.id
   route {
-    cidr_block = "0.0.0/0"
+    cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.llm_inference_api_igw.id
   }
 
@@ -57,7 +57,7 @@ resource "aws_route_table" "llm_inference_api_public_route_table" {
 resource "aws_route_table" "llm_inference_api_private_route_table" {
   vpc_id = aws_vpc.llm_inference_api_vpc.id
   route {
-    cidr_block     = "0.0.0/0"
+    cidr_block     = "0.0.0.0/0"
     nat_gateway_id = aws_nat_gateway.llm_inference_api_nat.id
   }
 
