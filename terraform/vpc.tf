@@ -10,23 +10,23 @@ resource "aws_vpc" "llm_inference_api_vpc" {
 }
 
 resource "aws_subnet" "public_llm_inference_api_subnet" {
-  for_each   = var.public_subnets
-  vpc_id     = aws_vpc.llm_inference_api_vpc.id
-  cidr_block = cidrsubnet(aws_vpc.llm_inference_api_vpc.cidr_block, 8, each.value)
+  for_each          = var.public_subnets
+  vpc_id            = aws_vpc.llm_inference_api_vpc.id
+  cidr_block        = cidrsubnet(aws_vpc.llm_inference_api_vpc.cidr_block, 8, each.value)
   availability_zone = each.key
   tags = {
     Name                                              = "public-${each.key}"
     "kubernetes.io/role/elb"                          = "1"
-    "kubernetes.io/cluster/llm_inference_api_cluster" = "owned"
+    "kubernetes.io/cluster/llm-inference-api-cluster" = "owned"
   }
 
 }
 
 
 resource "aws_subnet" "private_llm_inference_api_subnet" {
-  for_each   = var.private_subnets
-  vpc_id     = aws_vpc.llm_inference_api_vpc.id
-  cidr_block = cidrsubnet(aws_vpc.llm_inference_api_vpc.cidr_block, 8, each.value)
+  for_each          = var.private_subnets
+  vpc_id            = aws_vpc.llm_inference_api_vpc.id
+  cidr_block        = cidrsubnet(aws_vpc.llm_inference_api_vpc.cidr_block, 8, each.value)
   availability_zone = each.key
   tags = {
     Name                                              = "private-${each.key}"
