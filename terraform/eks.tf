@@ -92,13 +92,13 @@ resource "aws_eks_access_policy_association" "llm_inference_gha_admin" {
 
 resource "aws_eks_access_entry" "llm_inference_user_access" {
   cluster_name  = aws_eks_cluster.llm_inference_api_cluster.name
-  principal_arn = "arn:aws:iam::831274730062:user/llm_inference_api"
+  principal_arn = "arn:aws:iam::831274730062:user/llm_inference"
   type          = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "llm_inference_user_admin" {
   cluster_name  = aws_eks_cluster.llm_inference_api_cluster.name
-  principal_arn = "arn:aws:iam::831274730062:user/llm_inference_api"
+  principal_arn = "arn:aws:iam::831274730062:user/llm_inference"
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
   access_scope {

@@ -1,4 +1,4 @@
-resource "kubernetes_service_account" "secure_devops_alb_service_account" {
+resource "kubernetes_service_account" "llm_inference_api_alb_service_account" {
   metadata {
     name      = "aws-alb-controller"
     namespace = "kube-system"
