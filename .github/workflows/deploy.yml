@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   deploy-app:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -94,14 +95,17 @@ jobs:
 
       - name: Deploy ALB Controller
         run: |
+          set -euo pipefail
+          ALB_ROLE_ARN="$(aws iam get-role --role-name "$ROLE_NAME" --query 'Role.Arn' --output text)"
           helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller \
             -n kube-system \
             --create-namespace \
             --set clusterName=llm-inference-api-cluster \
             --set region=us-east-1 \
             --set vpcId=${{ steps.vpc.outputs.vpc_id }} \
-            --set serviceAccount.create=false \
+            --set serviceAccount.create=true \
             --set serviceAccount.name=aws-alb-controller \
+            --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=${{ secrets.ALB_ROLE_ARN }} \
             --set image.tag="v2.7.1"
 
       - name: Sleep for ALB readiness

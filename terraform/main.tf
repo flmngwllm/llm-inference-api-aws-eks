@@ -23,9 +23,7 @@ provider "aws" {
   region = var.REGION
 }
 
-data "aws_eks_cluster" "llm_inference_api_cluster" {
-  name = aws_eks_cluster.llm_inference_api_cluster.name
-}
+
 
 data "terraform_remote_state" "bootstrap" {
   backend = "s3"
