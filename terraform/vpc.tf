@@ -13,6 +13,7 @@ resource "aws_subnet" "public_llm_inference_api_subnet" {
   for_each   = var.public_subnets
   vpc_id     = aws_vpc.llm_inference_api_vpc.id
   cidr_block = cidrsubnet(aws_vpc.llm_inference_api_vpc.cidr_block, 8, each.value)
+  availability_zone = each.key
   tags = {
     Name                                              = "public-${each.key}"
     "kubernetes.io/role/elb"                          = "1"
@@ -26,6 +27,7 @@ resource "aws_subnet" "private_llm_inference_api_subnet" {
   for_each   = var.private_subnets
   vpc_id     = aws_vpc.llm_inference_api_vpc.id
   cidr_block = cidrsubnet(aws_vpc.llm_inference_api_vpc.cidr_block, 8, each.value)
+  availability_zone = each.key
   tags = {
     Name                                              = "private-${each.key}"
     "kubernetes.io/role/internal-elb"                 = "1"
@@ -56,6 +58,7 @@ resource "aws_route_table" "llm_inference_api_public_route_table" {
 
 resource "aws_route_table" "llm_inference_api_private_route_table" {
   vpc_id = aws_vpc.llm_inference_api_vpc.id
+
   route {
     cidr_block     = "0.0.0.0/0"
     nat_gateway_id = aws_nat_gateway.llm_inference_api_nat.id
