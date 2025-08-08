@@ -57,16 +57,16 @@ jobs:
       - name: Terraform plan
         run: |
           terraform plan -out=tfplan -input=false -no-color
-          -var='public_access_cidrs=["0.0.0.0/0"]' \
-          -var="github_actions_role_arn=${ACTIONS_ROLE_ARN}"
+            -var='public_access_cidrs=["0.0.0.0/0"]' \
+            -var="github_actions_role_arn=${ACTIONS_ROLE_ARN}" || exit 1
         
 
       - name: Terraform apply
         if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
         run: |
           terraform apply -input=false -auto-approve 
-          -var='public_access_cidrs=["0.0.0.0/0"]' \
-          -var="github_actions_role_arn=${ACTIONS_ROLE_ARN}"
+            -var='public_access_cidrs=["0.0.0.0/0"]' \
+            -var="github_actions_role_arn=${ACTIONS_ROLE_ARN}" || exit 1
       
       - name: Save VPC ID to file
         run: terraform output -raw vpc_id > vpc_id.txt
