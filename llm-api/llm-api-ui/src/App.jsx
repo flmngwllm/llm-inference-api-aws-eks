@@ -1,16 +1,13 @@
-import { useState } from 'react'
-import LlmComponent from './llmComponent';
+import LlmPrompt from "./LlmPrompt.jsx";
 
 function App() {
-  
   return (
-    
       <div>
-        <LlmComponent />
+        <LlmPrompt />
       </div>
     
     
   )
 }
 
-export default App
+export default App;
