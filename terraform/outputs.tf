@@ -26,3 +26,15 @@ output "ecr_repository_url" {
 output "gha_admin_policy_arn" {
   value = aws_eks_access_policy_association.llm_inference_gha_admin.policy_arn
 }
+
+output "cloudfront_domain_name" {
+  value = aws_cloudfront_distribution.llm_s3_distribution.domain_name
+}
+
+output "cloudfront_distribution_id" {
+  value = aws_cloudfront_distribution.llm_s3_distribution.id
+}
+
+output "frontend_bucket_name" {
+  value = aws_s3_bucket.llm_frontend_assets.id
+}

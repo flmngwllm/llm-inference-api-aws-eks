@@ -3,6 +3,9 @@ variable "REGION" {
   default     = "us-east-1"
 }
 
+variable "BUCKET_NAME" {
+  default = "llm-inference-api-frontend"
+}
 
 variable "public_subnets" {
   description = "Map of public subnets"
