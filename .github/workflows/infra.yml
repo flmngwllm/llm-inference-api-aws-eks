@@ -60,7 +60,6 @@ jobs:
             -var='public_access_cidrs=["0.0.0.0/0"]' \
             -var="github_actions_role_arn=${ACTIONS_ROLE_ARN}" || exit 1
         
-
       - name: Terraform apply
         if: github.event_name != 'pull_request'
         run: |
@@ -68,6 +67,19 @@ jobs:
             -var='public_access_cidrs=["0.0.0.0/0"]' \
             -var="github_actions_role_arn=${ACTIONS_ROLE_ARN}" || exit 1
       
+      - name: Save llm-bucket and cloudfront IDs to file
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          terraform output -raw frontend_bucket_name > frontend_bucket_name.txt
+          terraform output -raw cloudfront_domain_name > cloudfront_domanin_name.txt
+          terraform output -raw cloudfront_distribution_id > cloudfront_distribution_id.txt
+      
+      - name: Upload llm-bucket and cloudfront IDs to s3
+        run: |
+          aws s3 cp frontend_bucket_name.txt s3://${{ secrets.CI_BUCKET_NAME }}/frontend_bucket_name.txt
+          aws s3 cp cloudfront_domain_name.txt s3://${{ secrets.CI_BUCKET_NAME }}/cloudfront_domain_name.txt
+          aws s3 cp cloudfront_distributtion_id.txt s3://${{ secrets.CI_BUCKET_NAME }}/cloudfront_distribution_id.txt
+
       - name: Save VPC ID to file
         run: terraform output -raw vpc_id > vpc_id.txt
 
