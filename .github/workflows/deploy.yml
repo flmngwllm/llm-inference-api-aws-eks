@@ -85,6 +85,7 @@ jobs:
 
       - name: Download VPC ID artifact
         run: |
+          mkdir -p artifacts
           aws s3 cp s3://${{ secrets.CI_BUCKET_NAME }}/vpc_id.txt ./artifacts/vpc_id.txt
 
       - name: Read VPC ID into environment variable
@@ -107,7 +108,7 @@ jobs:
             --set vpcId=${{ steps.vpc.outputs.vpc_id }} \
             --set serviceAccount.create=true \
             --set serviceAccount.name=aws-alb-controller \
-            --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=${{ secrets.ALB_ROLE_ARN }} \
+            --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="$ALB_ROLE_ARN" \
             --set image.tag="v2.7.1"
 
       - name: Sleep for ALB readiness
@@ -159,6 +160,24 @@ jobs:
           kubectl get deployments
           kubectl get nodes
       
+      - name: Wait for Ingress & export API URL
+        id: alburl
+        run: |
+          set -euo pipefail
+          for i in {1..30}; do
+            H=$(kubectl get ingress -n default llm-api -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+            if [ -n "$H" ]; then
+              echo "hostname=$H" >> $GITHUB_OUTPUT
+              break
+            fi
+            echo "waiting for ingress hostname... ($i/30)"; sleep 20
+          done
+          test -n "${H:-}" || { echo "Ingress didn't get a hostname in time"; exit 1; }
+          echo "http://$H" > api_base_url.txt
+
+      - name: Upload API URL for frontend
+        run: aws s3 cp api_base_url.txt s3://${{ env.CI_BUCKET_NAME }}/api_base_url.txt
+
       - name: Update kubeconfig
         run: |
           aws eks --region us-east-1 update-kubeconfig --name llm-inference-api-cluster
