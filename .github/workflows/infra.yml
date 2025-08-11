@@ -71,7 +71,7 @@ jobs:
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: |
           terraform output -raw frontend_bucket_name > frontend_bucket_name.txt
-          terraform output -raw cloudfront_domain_name > cloudfront_domanin_name.txt
+          terraform output -raw cloudfront_domain_name > cloudfront_domain_name.txt
           terraform output -raw cloudfront_distribution_id > cloudfront_distribution_id.txt
       
       - name: Upload llm-bucket and cloudfront IDs to s3

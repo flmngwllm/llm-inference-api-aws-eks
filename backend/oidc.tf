@@ -193,7 +193,7 @@ resource "aws_iam_role_policy" "llm_github_actions_policy" {
         Action = [
           "cloudfront:CreateOriginAccessControl", "cloudfront:GetOriginAccessControl",
           "cloudfront:ListOriginAccessControls", "cloudfront:UpdateOriginAccessControl",
-          "cloudfront:DeleteOriginAccessControl",
+          "cloudfront:DeleteOriginAccessControl", "cloudfront:TagResource", "cloudfront:ListTagsForResource",
 
           "cloudfront:CreateDistribution", "cloudfront:GetDistribution", "cloudfront:GetDistributionConfig",
           "cloudfront:UpdateDistribution", "cloudfront:DeleteDistribution", "cloudfront:ListDistributions",
