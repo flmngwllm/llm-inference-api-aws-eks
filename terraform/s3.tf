@@ -1,7 +1,7 @@
 resource "aws_s3_bucket" "llm_frontend_assets" {
-    bucket = var.BUCKET_NAME
-    force_destroy = true
-    
+  bucket        = var.BUCKET_NAME
+  force_destroy = true
+
 }
 
 resource "aws_s3_bucket_public_access_block" "initial" {
@@ -30,10 +30,10 @@ resource "aws_s3_bucket_policy" "bucket_policy" {
         Resource  = "arn:aws:s3:::${aws_s3_bucket.llm_frontend_assets.id}/*",
         Principal = { Service = "cloudfront.amazonaws.com" },
         Condition = {
-        StringEquals = {
-          "AWS:SourceArn" : aws_cloudfront_distribution.llm_s3_distribution.arn
+          StringEquals = {
+            "AWS:SourceArn" : aws_cloudfront_distribution.llm_s3_distribution.arn
+          }
         }
-      }
       }
     ]
   })
