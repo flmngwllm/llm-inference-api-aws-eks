@@ -1,5 +1,5 @@
-resource "aws_cloudfront_origin_access_control" "S3_OAC" {
-  name                              = "s3_static-oac"
+resource "aws_cloudfront_origin_access_control" "llm_S3_OAC" {
+  name                              = "llm_s3_static-oac"
   description                       = "OAC for S3 bucket ${var.BUCKET_NAME}"
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"
@@ -15,7 +15,7 @@ locals {
 resource "aws_cloudfront_distribution" "llm_s3_distribution" {
   origin {
     domain_name              = aws_s3_bucket.llm_frontend_assets.bucket_regional_domain_name
-    origin_access_control_id = aws_cloudfront_origin_access_control.S3_OAC.id
+    origin_access_control_id = aws_cloudfront_origin_access_control.llm_S3_OAC.id
     origin_id                = local.s3_origin_id
   }
 
