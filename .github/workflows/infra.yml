@@ -78,7 +78,7 @@ jobs:
         run: |
           aws s3 cp frontend_bucket_name.txt s3://${{ secrets.CI_BUCKET_NAME }}/frontend_bucket_name.txt
           aws s3 cp cloudfront_domain_name.txt s3://${{ secrets.CI_BUCKET_NAME }}/cloudfront_domain_name.txt
-          aws s3 cp cloudfront_distributtion_id.txt s3://${{ secrets.CI_BUCKET_NAME }}/cloudfront_distribution_id.txt
+          aws s3 cp cloudfront_distribution_id.txt s3://${{ secrets.CI_BUCKET_NAME }}/cloudfront_distribution_id.txt
 
       - name: Save VPC ID to file
         run: terraform output -raw vpc_id > vpc_id.txt
