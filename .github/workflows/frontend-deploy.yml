@@ -1,20 +1,20 @@
 name: Frontend Deploy
-on: 
+on:
+  workflow_run:
+    workflows: ["Deploy App with Helm + EKS"]   # wait for deploy.yml to finish (it writes api_base_url.txt)
+    types: ["completed"]
+  workflow_dispatch: 
   push:
     paths:
       - 'llm-api/llm-api-ui/**'
-  workflow_run:
-    workflows: ["Terraform CI/CD"]
-    types: ["completed"]
-  workflow_dispatch:
-
+  
 permissions:
   id-token: write
   contents: read
 
 jobs:
   deploy-frontend:
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source code
@@ -35,47 +35,39 @@ jobs:
           aws s3 cp s3://${{ secrets.CI_BUCKET_NAME }}/api_base_url.txt ./artifacts/api_base_url.txt
       
       - name: Read artifacts to outputs
-        id: frontend
+        id: front
         run: |
           echo "bucket=$(cat ./artifacts/frontend_bucket_name.txt)" >> $GITHUB_OUTPUT
           echo "dist_id=$(cat ./artifacts/cloudfront_distribution_id.txt)" >> $GITHUB_OUTPUT
           echo "domain=$(cat ./artifacts/cloudfront_domain_name.txt)" >> $GITHUB_OUTPUT
-          echo "CloudFront domain: $(cat ./artifacts/cloudfront_domain_name.txt)"
-          echo "url=$(cat ./artifacts/api_base_url.txt)" >> $GITHUB_OUTPUT
+          echo "api_url=$(cat ./artifacts/api_base_url.txt)" >> $GITHUB_OUTPUT
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Get ALB hostname from Ingress
-        id: alb
-        run: |
-          HOSTNAME=$(kubectl get ingress -n default llm-api \
-            -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-          echo "url=http://$HOSTNAME" >> $GITHUB_OUTPUT
-
       - name: Build React
         working-directory: ./llm-api/llm-api-ui
         env:
-          VITE_API_BASE_URL: ${{ steps.api.outputs.url }}
+          VITE_API_BASE_URL: ${{ steps.front.api.outputs.api_url }}
         run: |
           npm ci
           npm run build
 
       - name: Upload static assets (immutable)
         run: |
-          aws s3 sync ./llm-api/llm-api-ui/dist s3://${{ steps.frontend.outputs.bucket }} \
+          aws s3 sync ./llm-api/llm-api-ui/dist s3://${{ steps.front.outputs.bucket }} \
             --exclude "index.html" \
             --cache-control "public,max-age=31536000,immutable" \
             --delete
       
       - name: Upload index.html (no cache)
         run: |
-          aws s3 cp ./llm-api/llm-api-ui/dist/index.html s3://${{ steps.frontend.outputs.bucket }}/index.html \
+          aws s3 cp ./llm-api/llm-api-ui/dist/index.html s3://${{ steps.front.outputs.bucket }}/index.html \
             --cache-control "no-cache"
 
       - name: Invalidate CloudFront
         run: |
           aws cloudfront create-invalidation \
-            --distribution-id ${{ steps.frontend.outputs.dist_id }} \
+            --distribution-id ${{ steps.front.outputs.dist_id }} \
             --paths "/*"

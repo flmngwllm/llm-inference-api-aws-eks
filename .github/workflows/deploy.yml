@@ -110,9 +110,7 @@ jobs:
             --set serviceAccount.name=aws-alb-controller \
             --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="$ALB_ROLE_ARN" \
             --set image.tag="v2.7.1"
-
-      - name: Sleep for ALB readiness
-        run: sleep 60
+            --wait --timeout 10m
 
       - name: Wait for ALB controller webhook to be ready
         run: |
@@ -151,6 +149,7 @@ jobs:
             --create-namespace \
             --set image.repository=831274730062.dkr.ecr.us-east-1.amazonaws.com/llm-inference-api \
             --set image.tag=${{ github.sha }}-${{ github.run_number }}
+            --wait --timeout 10m
 
       - name: Verify deployment
         run: |
@@ -165,10 +164,12 @@ jobs:
         run: |
           set -euo pipefail
           for i in {1..30}; do
-            H=$(kubectl get ingress -n default llm-api -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
-            if [ -n "$H" ]; then
-              echo "hostname=$H" >> $GITHUB_OUTPUT
-              break
+            NAME=$(kubectl get ingress -n default -l app.kubernetes.io/instance=llm-api \
+                    -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
+            if [ -n "$NAME" ]; then
+              H=$(kubectl get ingress -n default "$NAME" \
+                  -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+              [ -n "$H" ] && { echo "Found Ingress: $NAME -> $H"; break; }
             fi
             echo "waiting for ingress hostname... ($i/30)"; sleep 20
           done
