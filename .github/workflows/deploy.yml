@@ -109,7 +109,7 @@ jobs:
             --set serviceAccount.create=true \
             --set serviceAccount.name=aws-alb-controller \
             --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="$ALB_ROLE_ARN" \
-            --set image.tag="v2.7.1"
+            --set image.tag="v2.7.1" \
             --wait --timeout 10m
 
       - name: Wait for ALB controller webhook to be ready
@@ -148,7 +148,7 @@ jobs:
             --namespace default \
             --create-namespace \
             --set image.repository=831274730062.dkr.ecr.us-east-1.amazonaws.com/llm-inference-api \
-            --set image.tag=${{ github.sha }}-${{ github.run_number }}
+            --set image.tag=${{ github.sha }}-${{ github.run_number }} \
             --wait --timeout 10m
 
       - name: Verify deployment

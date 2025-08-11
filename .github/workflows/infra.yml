@@ -75,15 +75,18 @@ jobs:
           terraform output -raw cloudfront_distribution_id > cloudfront_distribution_id.txt
       
       - name: Upload llm-bucket and cloudfront IDs to s3
+        if: github.event_name != 'pull_request'
         run: |
           aws s3 cp frontend_bucket_name.txt s3://${{ secrets.CI_BUCKET_NAME }}/frontend_bucket_name.txt
           aws s3 cp cloudfront_domain_name.txt s3://${{ secrets.CI_BUCKET_NAME }}/cloudfront_domain_name.txt
           aws s3 cp cloudfront_distribution_id.txt s3://${{ secrets.CI_BUCKET_NAME }}/cloudfront_distribution_id.txt
 
       - name: Save VPC ID to file
+        if: github.event_name != 'pull_request'
         run: terraform output -raw vpc_id > vpc_id.txt
 
       - name: Upload VPC ID to S3
+        if: github.event_name != 'pull_request'
         run: |
           aws s3 cp vpc_id.txt s3://${{ secrets.CI_BUCKET_NAME }}/vpc_id.txt
         
