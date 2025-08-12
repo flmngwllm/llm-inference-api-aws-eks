@@ -6,7 +6,7 @@ const LlmPrompt = () => {
     const [answer, setAnswer] = useState("");
     const [loading, setLoading] = useState(false);
     
-    const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+    const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
     
     // Function to handle form submission and fetch the answer from the API
     const handleSubmit = async (e) => {
@@ -37,6 +37,7 @@ const LlmPrompt = () => {
         <div>
             <form onSubmit={handleSubmit}>
                 <textarea 
+                 rows={4}
                  value={prompt}
                  onChange={(e) => setPrompt(e.target.value)}
                  placeholder="Ask me anything..."

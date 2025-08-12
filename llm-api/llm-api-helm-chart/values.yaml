@@ -76,12 +76,16 @@ resources: {}
 
 livenessProbe:
   httpGet:
-    path: /
+    path: /healthz
     port: http
+    initialDelaySeconds: 20
+    timeoutSeconds: 5
 readinessProbe:
   httpGet:
-    path: /
+    path: /healthz
     port: http
+    initialDelaySeconds: 10
+    timeoutSeconds: 5
 
 autoscaling:
   enabled: false
