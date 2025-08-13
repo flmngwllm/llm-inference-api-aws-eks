@@ -32,14 +32,14 @@ resource "aws_cloudfront_distribution" "llm_s3_distribution" {
   }
 
   #API (ALB) origin — CF -> ALB over HTTP
-   origin {
-    domain_name = local.api_hostname_clean         # e.g. k8s-...elb.amazonaws.com
+  origin {
+    domain_name = local.api_hostname_clean # e.g. k8s-...elb.amazonaws.com
     origin_id   = "api-alb"
 
     custom_origin_config {
       http_port              = 80
       https_port             = 443
-      origin_protocol_policy = "http-only"   # keep ALB plain HTTP; browser remains HTTPS to CF
+      origin_protocol_policy = "http-only" # keep ALB plain HTTP; browser remains HTTPS to CF
       origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
@@ -51,14 +51,14 @@ resource "aws_cloudfront_distribution" "llm_s3_distribution" {
   price_class         = "PriceClass_100"
 
 
-#route /api/* to ALB, no cache, forward everything (to avoid CORS issues)
+  #route /api/* to ALB, no cache, forward everything (to avoid CORS issues)
   ordered_cache_behavior {
-    path_pattern       = "/api/*"
-    target_origin_id   = "api-alb"
+    path_pattern           = "/api/*"
+    target_origin_id       = "api-alb"
     viewer_protocol_policy = "redirect-to-https"
 
-    allowed_methods    = ["GET","HEAD","OPTIONS","PUT","PATCH","POST","DELETE"]
-    cached_methods     = ["GET","HEAD"]
+    allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "PATCH", "POST", "DELETE"]
+    cached_methods  = ["GET", "HEAD"]
 
     # legacy forwarding block is fine; forward all headers/cookies, and queries
     forwarded_values {
@@ -79,12 +79,12 @@ resource "aws_cloudfront_distribution" "llm_s3_distribution" {
     allowed_methods            = ["GET", "HEAD", "OPTIONS"]
     cached_methods             = ["GET", "HEAD"]
 
- 
+
     viewer_protocol_policy = "redirect-to-https"
     target_origin_id       = local.s3_origin_id
     compress               = true
   }
-  
+
 
   custom_error_response {
     error_code            = 403
