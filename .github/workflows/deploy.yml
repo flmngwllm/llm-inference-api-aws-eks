@@ -25,6 +25,14 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
+      - name: AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ACTIONS_ROLE_ARN }}
+          role-session-name: GitHubActions
+          aws-region: us-east-1
+  
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
@@ -35,13 +43,7 @@ jobs:
           terraform output -raw artifacts_bucket_name > artifacts_bucket_name.txt
           echo "ART_BUCKET=$(cat artifacts_bucket_name.txt)" >> $GITHUB_ENV
 
-      - name: AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ env.ACTIONS_ROLE_ARN }}
-          role-session-name: GitHubActions
-          aws-region: us-east-1
-
+      
       - name: tfsec action
         uses: aquasecurity/tfsec-action@v1.0.3
         continue-on-error: true
