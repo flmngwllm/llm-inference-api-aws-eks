@@ -41,5 +41,7 @@ variable "github_actions_role_arn" {
 }
 
 variable "artifacts_bucket_name" {
-  type = string
+  type        = string
+  description = "Override for artifacts bucket (optional)"
+  default     = null
 }
