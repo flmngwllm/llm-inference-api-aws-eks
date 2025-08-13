@@ -25,6 +25,16 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Read artifacts bucket name from Terraform outputs
+        working-directory: ./terraform
+        run: |
+          terraform init -upgrade
+          terraform output -raw artifacts_bucket_name > artifacts_bucket_name.txt
+          echo "ART_BUCKET=$(cat artifacts_bucket_name.txt)" >> $GITHUB_ENV
+
       - name: AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -86,7 +96,7 @@ jobs:
       - name: Download VPC ID artifact
         run: |
           mkdir -p artifacts
-          aws s3 cp s3://${{ secrets.CI_BUCKET_NAME }}/vpc_id.txt ./artifacts/vpc_id.txt
+          aws s3 cp s3://$ART_BUCKET/vpc_id.txt ./artifacts/vpc_id.txt
 
       - name: Read VPC ID into environment variable
         id: vpc
@@ -177,7 +187,7 @@ jobs:
           echo "http://$H" > api_base_url.txt
 
       - name: Upload API URL for frontend
-        run: aws s3 cp api_base_url.txt s3://${{ env.CI_BUCKET_NAME }}/api_base_url.txt
+        run: aws s3 cp api_base_url.txt s3://$ART_BUCKET/api_base_url.txt
 
       - name: Update kubeconfig
         run: |

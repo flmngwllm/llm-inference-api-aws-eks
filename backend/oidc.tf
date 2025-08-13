@@ -130,16 +130,30 @@ resource "aws_iam_role_policy" "llm_github_actions_policy" {
 
       # --- Artifacts bucket  ---
       {
-        Effect   = "Allow",
-        Action   = ["s3:CreateBucket", "s3:PutBucketTagging", "s3:GetBucketLocation"],
-        Resource = "arn:aws:s3:::llm-inference-api-artifacts"
+        Sid    = "ArtifactsBucketMgmt",
+        Effect = "Allow",
+        Action = [
+          "s3:GetBucketLocation",
+          "s3:PutBucketTagging"
+        ],
+        Resource = aws_s3_bucket.llm_inference_api_ci_artifacts.arn
       },
       {
+        Sid    = "ArtifactsObjectsRW",
         Effect = "Allow",
-        Action = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject", "s3:ListBucket"],
+        Action = [
+          "s3:ListBucket",
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:GetObjectTagging",
+          "s3:PutObjectTagging",
+          "s3:GetObjectVersion",
+          "s3:GetObjectVersionTagging"
+        ],
         Resource = [
-          "arn:aws:s3:::llm-inference-api-artifacts",
-          "arn:aws:s3:::llm-inference-api-artifacts/*"
+          aws_s3_bucket.llm_inference_api_ci_artifacts.arn,
+          "${aws_s3_bucket.llm_inference_api_ci_artifacts.arn}/*"
         ]
       },
 
@@ -181,7 +195,7 @@ resource "aws_iam_role_policy" "llm_github_actions_policy" {
         Effect = "Allow",
         Action = [
           "s3:PutObject", "s3:GetObject", "s3:DeleteObject", "s3:PutObjectTagging",
-          "s3:ListBucketMultipartUploads", "s3:AbortMultipartUpload", 
+          "s3:ListBucketMultipartUploads", "s3:AbortMultipartUpload",
         ],
         Resource = "arn:aws:s3:::llm-inference-api-frontend/*"
       },

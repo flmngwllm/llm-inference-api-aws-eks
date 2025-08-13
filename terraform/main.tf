@@ -33,3 +33,10 @@ data "terraform_remote_state" "bootstrap" {
     region = "us-east-1"
   }
 }
+
+locals {
+  artifacts_bucket_name = coalesce(
+    var.artifacts_bucket_name,
+    data.terraform_remote_state.bootstrap.outputs.ci_artifacts_bucket_name
+  )
+}

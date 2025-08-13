@@ -15,7 +15,6 @@ on:
 env:
   TF_WORKING_DIR: ./terraform
   PUBLIC_ACCESS_CIDRS: '["0.0.0.0/0"]'
-  CI_BUCKET_NAME: ${{ secrets.CI_BUCKET_NAME }}
   ACTIONS_ROLE_ARN: ${{ secrets.ACTIONS_ROLE_ARN }}
   
 
@@ -58,7 +57,6 @@ jobs:
         run: |
           terraform plan -out=tfplan -input=false -no-color \
             -var='public_access_cidrs=["0.0.0.0/0"]' \
-            -var="artifacts_bucket_name=${CI_BUCKET_NAME}" \
             -var="github_actions_role_arn=${ACTIONS_ROLE_ARN}" || exit 1
         
       - name: Terraform apply
@@ -66,31 +64,36 @@ jobs:
         run: |
           terraform apply -input=false --auto-approve \
             -var='public_access_cidrs=["0.0.0.0/0"]' \
-            -var="artifacts_bucket_name=${CI_BUCKET_NAME}" \
             -var="github_actions_role_arn=${ACTIONS_ROLE_ARN}" || exit 1
       
       - name: Save llm-bucket and cloudfront IDs to file
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: |
+          terraform output -raw artifacts_bucket_name > artifacts_bucket_name.txt
           terraform output -raw frontend_bucket_name > frontend_bucket_name.txt
           terraform output -raw cloudfront_domain_name > cloudfront_domain_name.txt
           terraform output -raw cloudfront_distribution_id > cloudfront_distribution_id.txt
       
+      - name: Export ART_BUCKET env
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: echo "ART_BUCKET=$(cat artifacts_bucket_name.txt)" >> $GITHUB_ENV
+
       - name: Upload llm-bucket and cloudfront IDs to s3
         if: github.event_name != 'pull_request'
         run: |
-          aws s3 cp frontend_bucket_name.txt s3://${{ secrets.CI_BUCKET_NAME }}/frontend_bucket_name.txt
-          aws s3 cp cloudfront_domain_name.txt s3://${{ secrets.CI_BUCKET_NAME }}/cloudfront_domain_name.txt
-          aws s3 cp cloudfront_distribution_id.txt s3://${{ secrets.CI_BUCKET_NAME }}/cloudfront_distribution_id.txt
+          aws s3 cp frontend_bucket_name.txt s3://$ART_BUCKET/frontend_bucket_name.txt
+          aws s3 cp cloudfront_domain_name.txt s3://$ART_BUCKET/cloudfront_domain_name.txt
+          aws s3 cp cloudfront_distribution_id.txt s3://$ART_BUCKET/cloudfront_distribution_id.txt
 
       - name: Save VPC ID to file
         if: github.event_name != 'pull_request'
-        run: terraform output -raw vpc_id > vpc_id.txt
+        run: |
+          terraform output -raw vpc_id > vpc_id.txt
 
       - name: Upload VPC ID to S3
         if: github.event_name != 'pull_request'
         run: |
-          aws s3 cp vpc_id.txt s3://${{ secrets.CI_BUCKET_NAME }}/vpc_id.txt
+          aws s3 cp vpc_id.txt s3://$ART_BUCKET/vpc_id.txt
         
       - name: Test cluster access
         run: |

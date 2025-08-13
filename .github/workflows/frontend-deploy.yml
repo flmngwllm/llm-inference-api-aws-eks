@@ -24,13 +24,23 @@ jobs:
         with:
           role-to-assume: ${{ secrets.ACTIONS_ROLE_ARN }}
           aws-region: us-east-1
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Read artifacts bucket name from Terraform outputs
+        working-directory: ./terraform
+        run: |
+          terraform init -upgrade
+          terraform output -raw artifacts_bucket_name > artifacts_bucket_name.txt
+          echo "ART_BUCKET=$(cat artifacts_bucket_name.txt)" >> $GITHUB_ENV
 
       - name: Download frontend artifacts
         run: |
           mkdir -p artifacts
-          aws s3 cp s3://${{ secrets.CI_BUCKET_NAME }}/frontend_bucket_name.txt ./artifacts/frontend_bucket_name.txt
-          aws s3 cp s3://${{ secrets.CI_BUCKET_NAME }}/cloudfront_distribution_id.txt ./artifacts/cloudfront_distribution_id.txt
-          aws s3 cp s3://${{ secrets.CI_BUCKET_NAME }}/cloudfront_domain_name.txt ./artifacts/cloudfront_domain_name.txt
+          aws s3 cp s3://$ART_BUCKET/frontend_bucket_name.txt ./artifacts/frontend_bucket_name.txt
+          aws s3 cp s3://$ART_BUCKET/cloudfront_distribution_id.txt ./artifacts/cloudfront_distribution_id.txt
+          aws s3 cp s3://$ART_BUCKET/cloudfront_domain_name.txt ./artifacts/cloudfront_domain_name.txt
           
 
       - name: Read artifacts to outputs
@@ -48,7 +58,7 @@ jobs:
       - name: Build React
         working-directory: ./llm-api/llm-api-ui
         env:
-          VITE_API_BASE_URL: ${{ steps.front.outputs.api_url }}/api
+          VITE_API_BASE_URL: ${{ steps.front.outputs.domain }}/api
         run: |
           npm ci
           npm run build
