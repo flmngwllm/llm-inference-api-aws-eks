@@ -6,7 +6,7 @@ const LlmPrompt = () => {
     const [answer, setAnswer] = useState("");
     const [loading, setLoading] = useState(false);
     
-    const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+    const API_URL = import.meta.env.VITE_API_BASE_URL || "";
     
     // Function to handle form submission and fetch the answer from the API
     const handleSubmit = async (e) => {
@@ -15,7 +15,7 @@ const LlmPrompt = () => {
         setAnswer("");
 
         try {
-            const resp = await fetch(`${API_URL}/generate`, {
+            const resp = await fetch(`${API_URL}/api/generate`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({prompt}),
@@ -25,7 +25,7 @@ const LlmPrompt = () => {
             throw new Error(`${resp.status}, ${text}`)         
         }
             const data = await resp.json();
-            setAnswer(data.output ?? "(no output)")
+            setAnswer(data.response ?? "(no response)")
         } catch (err) {
             setAnswer(`Error: ${err.message}`);
         } finally {

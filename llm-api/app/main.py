@@ -13,8 +13,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.post("/api/generate")
+async def generate_api(payload: dict):
+    prompt = (payload or {}).get("prompt", "")
+    text = generate_text(prompt)
+    return {"response": text}  # frontend reads `data.response`
+
 @app.post("/generate")
-async def generate(payload: dict):
+async def generate_legacy(payload: dict):
     prompt = (payload or {}).get("prompt", "")
     text = generate_text(prompt)
     return {"output": text, "response": text}

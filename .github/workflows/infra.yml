@@ -58,6 +58,7 @@ jobs:
         run: |
           terraform plan -out=tfplan -input=false -no-color \
             -var='public_access_cidrs=["0.0.0.0/0"]' \
+            -var="artifacts_bucket_name=${CI_BUCKET_NAME}" \
             -var="github_actions_role_arn=${ACTIONS_ROLE_ARN}" || exit 1
         
       - name: Terraform apply
@@ -65,6 +66,7 @@ jobs:
         run: |
           terraform apply -input=false --auto-approve \
             -var='public_access_cidrs=["0.0.0.0/0"]' \
+            -var="artifacts_bucket_name=${CI_BUCKET_NAME}" \
             -var="github_actions_role_arn=${ACTIONS_ROLE_ARN}" || exit 1
       
       - name: Save llm-bucket and cloudfront IDs to file

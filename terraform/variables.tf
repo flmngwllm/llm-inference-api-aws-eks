@@ -39,3 +39,7 @@ variable "github_actions_role_arn" {
   type        = string
   description = "ARN of the GitHub Actions IAM Role"
 }
+
+variable "artifacts_bucket_name" {
+  type = string
+}
