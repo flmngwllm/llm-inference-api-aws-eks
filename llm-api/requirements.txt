@@ -1,4 +1,6 @@
 fastapi
 uvicorn[standard]
-transformers
-torch
+transformers==4.43.*         # or your pinned version
+# Force CPU-only torch wheels:
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.3.1

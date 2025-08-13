@@ -58,7 +58,7 @@ jobs:
       - name: Build React
         working-directory: ./llm-api/llm-api-ui
         env:
-          VITE_API_BASE_URL: ${{ steps.front.outputs.domain }}/api
+          VITE_API_BASE_URL: https://${{ steps.front.outputs.domain }}
         run: |
           npm ci
           npm run build
