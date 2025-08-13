@@ -38,3 +38,8 @@ output "cloudfront_distribution_id" {
 output "frontend_bucket_name" {
   value = aws_s3_bucket.llm_frontend_assets.id
 }
+
+output "artifacts_bucket_name" {
+  description = "CI artifacts bucket name"
+  value       = local.artifacts_bucket_name
+}

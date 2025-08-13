@@ -40,8 +40,3 @@ variable "github_actions_role_arn" {
   description = "ARN of the GitHub Actions IAM Role"
 }
 
-variable "artifacts_bucket_name" {
-  type        = string
-  description = "Override for artifacts bucket (optional)"
-  default     = null
-}
