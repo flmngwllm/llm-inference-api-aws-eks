@@ -8,7 +8,7 @@ resource "aws_cloudfront_origin_access_control" "llm_S3_OAC" {
 
 
 data "aws_s3_object" "api_base_url" {
-  bucket = var.artifacts_bucket_name
+  bucket = local.artifacts_bucket_name
   key    = "api_base_url.txt"
 }
 
