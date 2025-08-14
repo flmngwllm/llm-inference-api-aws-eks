@@ -45,6 +45,7 @@ def generate_text(prompt: str) -> str:
         top_p=TOP_P,
         eos_token_id=tokenizer.eos_token_id,
         pad_token_id=tokenizer.eos_token_id,
+        use_cache=False,
     )
     # Decode only the newly generated tokens (strip the prompt/template)
     gen_ids = outputs[0][inputs["input_ids"].shape[1]:]
