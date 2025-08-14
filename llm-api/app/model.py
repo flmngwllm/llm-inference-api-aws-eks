@@ -1,4 +1,4 @@
-mport os, torch
+import os, torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 # Small, CPU-friendly instruct model (override via env if you want)
