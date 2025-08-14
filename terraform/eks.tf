@@ -39,7 +39,7 @@ resource "aws_eks_node_group" "llm_inference_api_node_group" {
   node_role_arn   = aws_iam_role.llm_inference_api_node_group_role.arn
   subnet_ids = [aws_subnet.private_llm_inference_api_subnet["us-east-1a"].id,
   aws_subnet.private_llm_inference_api_subnet["us-east-1b"].id]
-  disk_size = 100
+  disk_size      = 100
   instance_types = ["t3.large"]
   scaling_config {
     desired_size = 1
