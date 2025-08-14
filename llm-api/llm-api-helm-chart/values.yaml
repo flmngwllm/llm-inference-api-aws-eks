@@ -62,7 +62,14 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
-resources: {}
+resources:
+  requests:
+    cpu: "500m"
+    memory: "2Gi"
+  limits:
+    cpu: "1"
+    memory: "3Gi"
+  
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -88,6 +95,14 @@ readinessProbe:
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 6
+startupProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  # 5 min budget → 60 * 5s
+  failureThreshold: 60
+  periodSeconds: 5
+  timeoutSeconds: 2
 
 autoscaling:
   enabled: false
