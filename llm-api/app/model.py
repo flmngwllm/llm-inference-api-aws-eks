@@ -1,44 +1,51 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer
-import torch, os
+import os, torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
-# keep the same variable name; allow overriding via env
-model_name = os.getenv("HF_MODEL_ID", "Qwen/Qwen2.5-1.5B-Instruct")
+# Keep your original env var name / default
+MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-0.5B-Instruct")
 
-tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
+# fast tokenizer + lower peak RAM on load
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True)
 model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    torch_dtype=torch.float32,   # CPU-friendly
+    MODEL_NAME,
+    torch_dtype=torch.float16,     # halves weight memory, fine on CPU for this size
+    low_cpu_mem_usage=True,        # reduces load-time peak RAM
 )
 model.eval()
 
-# make sure we have a pad token
+
 if tokenizer.pad_token_id is None:
     tokenizer.pad_token = tokenizer.eos_token
 
-SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT", "You are a concise, helpful assistant.")
-
-def _format_prompt(prompt: str) -> str:
-    """Use chat template when available so the model follows instructions well."""
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": prompt.strip()},
-    ]
-    if hasattr(tokenizer, "apply_chat_template"):
-        return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-    # fallback if a model lacks a chat template
-    return f"{SYSTEM_PROMPT}\nUser: {prompt.strip()}\nAssistant:"
+# Optional env dials 
+MAX_INPUT_TOKENS = int(os.getenv("MAX_INPUT_TOKENS", "1024"))
+MAX_NEW_TOKENS   = int(os.getenv("MAX_NEW_TOKENS", "256"))
+DO_SAMPLE        = os.getenv("DO_SAMPLE", "true").lower() == "true"
+TEMPERATURE      = float(os.getenv("TEMPERATURE", "0.7"))
+TOP_P            = float(os.getenv("TOP_P", "0.95"))
 
 @torch.no_grad()
 def generate_text(prompt: str) -> str:
-    text = _format_prompt(prompt)
-    inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=2048)
+    # instruction following
+    messages = [{"role": "user", "content": prompt}]
+    templated = tokenizer.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
+    )
+    inputs = tokenizer(
+        templated,
+        return_tensors="pt",
+        truncation=True,
+        max_length=MAX_INPUT_TOKENS,  # keeps memory in check
+    )
     outputs = model.generate(
         **inputs,
-        max_new_tokens=160,
-        do_sample=False,  # deterministic for demos
-        pad_token_id=tokenizer.pad_token_id,
+        max_new_tokens=MAX_NEW_TOKENS,
+        do_sample=DO_SAMPLE,
+        temperature=TEMPERATURE,
+        top_p=TOP_P,
         eos_token_id=tokenizer.eos_token_id,
+        pad_token_id=tokenizer.eos_token_id,
     )
-    # return only the newly generated tokens (not the prompt)
-    gen_ids = outputs[0][inputs["input_ids"].shape[-1]:]
-    return (tokenizer.decode(gen_ids, skip_special_tokens=True).strip() or "(no answer)")
+    # Decode only the newly generated tokens (strip the prompt/template)
+    gen_ids = outputs[0][inputs["input_ids"].shape[1]:]
+    return tokenizer.decode(gen_ids, skip_special_tokens=True).strip()
